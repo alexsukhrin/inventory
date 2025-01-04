@@ -11,3 +11,11 @@ pom.xml.asc
 /.prepl-port
 .hgignore
 .hg/
+env
+repl.sh
+report.csv
+.calva/
+.clj-kondo/
+.idea/
+.lsp/
+log/

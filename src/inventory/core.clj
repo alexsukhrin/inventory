@@ -1,7 +1,16 @@
 (ns inventory.core
-  (:gen-class))
+  (:gen-class)
+  (:require
+   [mount.core :as mount]
+   [inventory.db :as db]
+   [inventory.server :as server]))
 
-(defn -main
-  "I don't do a whole lot ... yet."
-  [& args]
-  (println "Hello, World!"))
+(defn start []
+  (mount/start))
+
+(defn stop []
+  (mount/stop))
+
+;; Main entry point
+(defn -main []
+  (start))

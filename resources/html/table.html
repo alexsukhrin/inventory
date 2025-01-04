@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editable Table</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        .btn {
+            padding: 5px 10px;
+            margin: 2px;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-add {
+            background-color: #4CAF50;
+        }
+
+        .btn-edit {
+            background-color: #FFA500;
+        }
+
+        .btn-delete {
+            background-color: #F44336;
+        }
+
+        .btn-save {
+            background-color: #008CBA;
+        }
+
+        .btn-cancel {
+            background-color: #777;
+        }
+        .btn-upload {
+            background-color: #008CBA;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-name {
+            font-size: 0.9em;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>Editable Table</h1>
+
+    <button class="btn btn-add" id="addRow">Add Row</button>
+    <button class="btn btn-add" id="exportCsv">Export to CSV</button>
+
+    <table id="editableTable">
+        <thead>
+            <tr></tr>
+                <th>№
+                    з/п
+                </th>
+                <th>Служба</th>
+                <th>Облік</th>
+                <th>Тип майна</th>
+                <th>Найменування</th>
+                <th>Серійний номер</th>
+                <th>ID |Наліпка</th>
+                <th>Фактично 
+                    знаходиться</th>
+                <th>Статус</th>
+                <th>Підрозділ</th>
+                <th>Примітки та дописи</th>
+                <th>М.В.О</th>
+                <th>Номенклатура</th>
+                <th>Одиниця</th>
+                <th>Накладна</th>
+                <th>Останні
+                    зміни
+                </th>
+                <th>Фото</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td contenteditable="false"></td>
+                <td contenteditable="false"></td>
+                <td contenteditable="false"></td>
+                <td contenteditable="false"></td>
+                <td contenteditable="false"></td>
+                <td contenteditable="false"></td>
+                <td contenteditable="false"></td>
+                <td contenteditable="false"></td>
+                <td contenteditable="false"></td>
+                <td contenteditable="false"></td>
+                <td contenteditable="false"></td>
+                <td contenteditable="false"></td>
+                <td contenteditable="false"></td>
+                <td contenteditable="false"></td>
+                <td contenteditable="false"></td>
+                <td contenteditable="false"></td>
+                <td>
+                    <span class="file-name">No file uploaded</span>
+                    <button class="btn btn-upload">Upload</button>
+                    <input type="file" class="file-input">
+                </td>
+                <td>
+                    <button class="btn btn-edit">Edit</button>
+                    <button class="btn btn-delete">Delete</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const table = document.getElementById('editableTable');
+            const addRowButton = document.getElementById('addRow');
+
+            // Add a new row
+            addRowButton.addEventListener('click', () => {
+                const tbody = table.querySelector('tbody');
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td contenteditable="true"></td>
+                <td>
+                    <span class="file-name">No file uploaded</span>
+                    <button class="btn btn-upload">Upload</button>
+                    <input type="file" class="file-input">
+                </td>
+                <td>
+                    <button class="btn btn-edit">Edit</button>
+                    <button class="btn btn-delete">Delete</button>
+                </td>
+                `;
+                tbody.appendChild(newRow);
+                attachRowListeners(newRow);
+            });
+
+            // Attach listeners to buttons in a row
+            function attachRowListeners(row) {
+                const editButton = row.querySelector('.btn-edit');
+                const deleteButton = row.querySelector('.btn-delete');
+                const uploadButton = row.querySelector('.btn-upload');
+                const fileInput = row.querySelector('.file-input');
+                const fileNameSpan = row.querySelector('.file-name');
+                const exportCsvButton = document.getElementById('exportCsv');
+
+                exportCsvButton.addEventListener('click', () => {
+                    const rows = table.querySelectorAll('tr');
+                    let csvContent = "";
+
+                    rows.forEach(row => {
+                        const cols = row.querySelectorAll('td, th');
+                        const rowData = Array.from(cols)
+                            .map(col => `"${col.textContent.trim()}"`)
+                            .join(",");
+                        csvContent += rowData + "\n";
+                    });
+
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', 'table.csv');
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                });
+
+                editButton.addEventListener('click', () => {
+                    row.querySelectorAll('td[contenteditable]').forEach(cell => {
+                        cell.contentEditable = true;
+                    });
+                });
+
+                deleteButton.addEventListener('click', () => {
+                    row.remove();
+                });
+
+                uploadButton.addEventListener('click', () => {
+                    fileInput.click();
+                });
+
+                fileInput.addEventListener('change', (event) => {
+                    const file = event.target.files[0];
+                    if (file) {
+                        fileNameSpan.textContent = file.name;
+                    } else {
+                        fileNameSpan.textContent = "No file uploaded";
+                    }
+                });
+
+            }
+
+            // Attach listeners to all initial rows
+            table.querySelectorAll('tbody tr').forEach(attachRowListeners);
+        });
+        const exportToFile = () => {
+            const rows = table.querySelectorAll('tr');
+            let csvContent = "";
+
+            rows.forEach(row => {
+                const cols = row.querySelectorAll('td, th');
+                const rowData = Array.from(cols).map(col => `"${col.innerText.trim()}"`).join(",");
+                csvContent += rowData + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'table.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+
+        const saveToServer = () => {
+        const rows = Array.from(document.querySelectorAll('#editableTable tbody tr')).map(row => {
+            const cells = row.querySelectorAll('td[contenteditable]');
+            return {
+                position_number: cells[0]?.textContent.trim() || '',
+                service: cells[1]?.textContent.trim() || '',
+                accounting: cells[2]?.textContent.trim() || '',
+                property_type: cells[3]?.textContent.trim() || '',
+                name: cells[4]?.textContent.trim() || '',
+                serial_number: cells[5]?.textContent.trim() || '',
+                sticker: cells[6]?.textContent.trim() || '',
+                actually: cells[7]?.textContent.trim() || '',
+                status: cells[8]?.textContent.trim() || '',
+                derartment: cells[9]?.textContent.trim() || '',
+                description: cells[10]?.textContent.trim() || '',
+                m_v_o: cells[11]?.textContent.trim() || '',
+                nomenclature: cells[12]?.textContent.trim() || '',
+                unit: cells[13]?.textContent.trim() || '',
+                invoce: cells[14]?.textContent.trim() || '',
+                recent_changes: cells[15]?.textContent.trim() || '',
+                photo: cells[16]?.textContent.trim() || '',
+            };
+        });
+
+        fetch('/save-table', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(rows)
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('Table saved to server!');
+            } else {
+                alert('Failed to save table to server.');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    };
+
+    document.getElementById('addRow').insertAdjacentHTML('afterend', '<button class="btn btn-save" id="saveTableBtn">Save Table</button>');
+    document.getElementById('saveTableBtn').addEventListener('click', saveToServer);
+    </script>
+    {% block page-scripts %}
+    {% script "/js/app.js" %}
+    {% endblock %}
+</body>
+</html>
