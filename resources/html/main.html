@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Records Table</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .pagination button {
+            padding: 10px 15px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        .pagination button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Records</h1>
+    <table id="records-table">
+        <thead>
+            <tr>
+                <th>№
+                    з/п
+                </th>
+                <th>Служба</th>
+                <th>Облік</th>
+                <th>Тип майна</th>
+                <th>Найменування</th>
+                <th>Серійний номер</th>
+                <th>ID |Наліпка</th>
+                <th>Фактично 
+                    знаходиться</th>
+                <th>Статус</th>
+                <th>Підрозділ</th>
+                <th>Примітки та дописи</th>
+                <th>М.В.О</th>
+                <th>Номенклатура</th>
+                <th>Одиниця</th>
+                <th>Накладна</th>
+                <th>Останні
+                    зміни
+                </th>
+                <th>фото</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Rows will be added dynamically -->
+        </tbody>
+    </table>
+
+    <div class="pagination">
+        <button id="prev-page" disabled>Previous</button>
+        <span id="page-info">Page 1</span>
+        <button id="next-page">Next</button>
+    </div>
+</body>
+</html>

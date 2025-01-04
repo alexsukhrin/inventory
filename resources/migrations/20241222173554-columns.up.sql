@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS columns (
+    id SERIAL PRIMARY KEY,
+    table_id INT NOT NULL REFERENCES tables(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    is_nullable BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (table_id, name)
+);
