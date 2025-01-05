@@ -26,7 +26,8 @@
                  [hiccup "2.0.0-RC4"]
                  [cheshire "5.13.0"]
                  [clojure.java-time "1.4.3"]
-                 [org.clojure/data.csv "1.1.0"]]
+                 [org.clojure/data.csv "1.1.0"]
+                 [org.clojure/data.codec "0.1.1"]]
   :plugins [[migratus-lein "0.7.3"]]
   :main ^:skip-aot inventory.core
   :target-path "target/%s"

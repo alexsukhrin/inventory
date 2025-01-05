@@ -5,6 +5,7 @@
    [ring.middleware.session.memory :refer [memory-store]]
    [ring.middleware.params :refer [wrap-params]]
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
+   [ring.middleware.multipart-params :refer [wrap-multipart-params]]
    [compojure.core :refer [defroutes routes GET POST PUT DELETE context]]
    [compojure.route :refer [not-found]]
    [inventory.handlers.table :as table-handler]
@@ -49,6 +50,7 @@
       (wrap-params)
       (wrap-json-body {:keywords? true})
       (wrap-json-response)
+      (wrap-multipart-params)
       (wrap-session {:store (memory-store)})))
 
 
