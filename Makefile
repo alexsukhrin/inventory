@@ -5,7 +5,10 @@ deploy:
 	docker run --restart=on-failure:3 --env-file=env -d -it -p 8031:3000 --name inventory-app inventory-image
 
 stop:
-	docker stop $(docker ps -q)
+	docker stop inventory-app
+
+remove:
+	docker rm inventory-app
 
 images:
-	docker rmi $(docker images -q)
+	docker rmi inventory-image
