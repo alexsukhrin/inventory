@@ -190,11 +190,7 @@
        [:td {:class "px-4 py-2 border-b"} [:input {:type "hidden" :name "last_changes" :class "border rounded px-2 py-1"}]]
        [:td {:class "px-4 py-2 border-b"} [:input {:type "file" :name "photo_url" :class "border rounded px-2 py-1"}]]
        [:td {:class "px-4 py-2 border-b"}
-        [:button {:type "button"
-                  :hx-post "/save-row"
-                  :hx-include "closest tr"
-                  :hx-target "#add-row"
-                  :hx-swap "outerHTML"
+        [:button {:type "submit"
                   :class "bg-green-500 text-white px-3 py-1 rounded"} "Save"]]
        [:td {:class "px-4 py-2 border-b"}
         [:button {:hx-post "/delete-add-row-btn"
@@ -208,14 +204,16 @@
     (.toByteArray baos)))
 
 (defn encode-to-base64 [file-path]
-  (with-open [file-bytes (io/input-stream file-path)]
-    (String. (b64/encode (to-byte-array file-bytes)))))
+  (try 
+    (let [file-bytes (io/input-stream file-path)]
+    (String. (b64/encode (to-byte-array file-bytes))))
+    (catch Exception e (str "caught exception: " (.getMessage e)))))
 
 (defn save-row [request]
   (let [{:keys [service accounting property_type name serial_number id_label actual_location status department
-                notes mvo nomenclature price accounting_name unit invoice photo_url]} (:params request)
+                notes mvo nomenclature price accounting_name unit invoice photo_url]} (:params request) 
         temp-file (:tempfile photo_url)
-        base64-data (some-> temp-file encode-to-base64)
+        base64-data (encode-to-base64 temp-file)
         {:keys [id service accounting property_type name serial_number id_label actual_location status department
                 notes mvo nomenclature price accounting_name unit invoice last_changes photo_url]}
         (db/add-record {:service service
@@ -322,13 +320,7 @@
                [:td {:class "px-4 py-2 border-b"} [:input {:value last_changes :type "hidden" :name "last_changes" :class "border rounded px-2 py-1"}]]
                [:td {:class "px-4 py-2 border-b"} [:input {:value photo_url :type "file" :name "photo_url" :class "border rounded px-2 py-1"}]]
                [:td {:class "px-4 py-2 border-b"}
-                [:button {:type "button"
-                          :hx-post "/save-edit-row"
-                          :enctype "multipart/form-data"
-                          :hx-include "closest tr"
-                          :hx-target (str "#row-" id)
-                          :hx-swap "outerHTML"
-                          :hx-vals (generate-string {:row-id id})
+                [:button {:type "submit"
                           :class "bg-green-500 text-white px-3 py-1 rounded"} "Save"]]
                (when (is-admin role)
                  [:td {:class "px-4 py-2 border-b"}
@@ -342,7 +334,7 @@
         {:keys [row-id service accounting property_type name serial_number id_label actual_location status department
                 notes mvo nomenclature price accounting_name unit invoice photo_url]} (:params request)
         temp-file (:tempfile photo_url)
-        base64-data (some-> temp-file encode-to-base64)
+        base64-data (encode-to-base64 temp-file)
         {:keys [id service accounting property_type name serial_number id_label actual_location status department
                 notes mvo nomenclature price accounting_name unit invoice last_changes photo_url]}
         (db/update-record {:row-id (Integer/parseInt row-id)
