@@ -99,12 +99,7 @@
            [:td {:class "px-4 py-2 border-b text-gray-700"} unit]
            [:td {:class "px-4 py-2 border-b text-gray-700"} invoice]
            [:td {:class "px-4 py-2 border-b text-gray-700"} last_changes]
-           [:td {:class "px-4 py-2 border-b text-gray-700"}
-            (when (base64-valid? photo_url)
-              [:a {:href (str "data:image/png;base64," photo_url)
-                   :download "image.png"}
-               [:img {:src (str "data:image/png;base64," photo_url)
-                      :alt "Фото"}]])]
+           [:td {:class "px-4 py-2 border-b text-gray-700"} (when (base64-valid? photo_url) [:a {:href (str "data:image/png;base64," photo_url) :download "image.png"} [:img {:src (str "data:image/png;base64," photo_url) :alt "Фото"}]])]
            (when (or (is-admin role) (is-edit role))
              [:td {:class "px-4 py-2 border-b"}
               [:button {:hx-post "/edit-row"
@@ -166,12 +161,7 @@
    (str
     (h/html
      [:tr {:id "add-row"}
-      [:form {:hx-post "/save-row"
-              :enctype "multipart/form-data"
-              :hx-include "closest tr"
-              :hx-target "#add-row"
-              :hx-swap "outerHTML"}
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "service" :class "border rounded px-2 py-1"}]]
+      [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "service" :class "border rounded px-2 py-1"}]]
        [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "accounting" :class "border rounded px-2 py-1"}]]
        [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "property_type" :class "border rounded px-2 py-1"}]]
        [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "name" :class "border rounded px-2 py-1"}]]
@@ -189,14 +179,18 @@
        [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "invoice" :class "border rounded px-2 py-1"}]]
        [:td {:class "px-4 py-2 border-b"} [:input {:type "hidden" :name "last_changes" :class "border rounded px-2 py-1"}]]
        [:td {:class "px-4 py-2 border-b"} [:input {:type "file" :name "photo_url" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"}
-        [:button {:type "submit"
+       [:td {:class "px-4 py-2 border-b"} 
+        [:button {:hx-post "/save-row" 
+                  :enctype "multipart/form-data"
+                   :hx-include "closest tr"
+                   :hx-target "#add-row"
+                   :hx-swap "outerHTML"
                   :class "bg-green-500 text-white px-3 py-1 rounded"} "Save"]]
        [:td {:class "px-4 py-2 border-b"}
         [:button {:hx-post "/delete-add-row-btn"
                   :hx-swap "outerHTML"
                   :hx-target "#add-row"
-                  :class "bg-red-500 text-white px-3 py-1 rounded"} "Delete"]]]]))))
+                  :class "bg-red-500 text-white px-3 py-1 rounded"} "Delete"]]]))))
 
 (defn to-byte-array [input-stream]
   (with-open [baos (java.io.ByteArrayOutputStream.)]
@@ -295,13 +289,7 @@
      :body (str
             (h/html
              [:tr {:id (str "row-" id)}
-              [:form {:hx-post "/save-edit-row"
-                      :enctype "multipart/form-data"
-                      :hx-include "closest tr"
-                      :hx-target (str "#row-" id)
-                      :hx-swap "outerHTML"
-                      :hx-vals (generate-string {:row-id id})}
-               [:td {:class "px-4 py-2 border-b"} [:input {:value service :type "text" :name "service" :class "border rounded px-2 py-1"}]]
+              [:td {:class "px-4 py-2 border-b"} [:input {:value service :type "text" :name "service" :class "border rounded px-2 py-1"}]]
                [:td {:class "px-4 py-2 border-b"} [:input {:value accounting :type "text" :name "accounting" :class "border rounded px-2 py-1"}]]
                [:td {:class "px-4 py-2 border-b"} [:input {:value property_type :type "text" :name "property_type" :class "border rounded px-2 py-1"}]]
                [:td {:class "px-4 py-2 border-b"} [:input {:value name :type "text" :name "name" :class "border rounded px-2 py-1"}]]
@@ -320,14 +308,19 @@
                [:td {:class "px-4 py-2 border-b"} [:input {:value last_changes :type "hidden" :name "last_changes" :class "border rounded px-2 py-1"}]]
                [:td {:class "px-4 py-2 border-b"} [:input {:value photo_url :type "file" :name "photo_url" :class "border rounded px-2 py-1"}]]
                [:td {:class "px-4 py-2 border-b"}
-                [:button {:type "submit"
+                [:button {:hx-post "/save-edit-row"
+                          :enctype "multipart/form-data"
+                          :hx-include "closest tr"
+                          :hx-target (str "#row-" id)
+                          :hx-swap "outerHTML"
+                          :hx-vals (generate-string {:row-id id})
                           :class "bg-green-500 text-white px-3 py-1 rounded"} "Save"]]
                (when (is-admin role)
                  [:td {:class "px-4 py-2 border-b"}
                   [:button {:hx-delete (str "/delete-row/" id)
                             :hx-swap "outerHTML"
                             :hx-target (str "#row-" id)
-                            :class "bg-red-500 text-white px-3 py-1 rounded"} "Delete"]])]]))}))
+                            :class "bg-red-500 text-white px-3 py-1 rounded"} "Delete"]])]))}))
 
 (defn save-edit-row [request]
   (let [role (get-role request)
