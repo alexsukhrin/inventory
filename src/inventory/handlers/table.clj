@@ -351,11 +351,12 @@
 
                   :else
                   [:span "Unsupported file type"])
+
                 [:button {:type "button"
                           :hx-delete (str "/delete-photo/" id)
                           :hx-target "#photo-container"
                           :hx-swap "outerHTML"
-                          :class "bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"}
+                          :class "bg-red-500 text-white px-3 py-1 mt-4 rounded hover:bg-red-600"}
                  "Видалити зображення"]])]
 
             [:input {:type "file"
@@ -366,7 +367,8 @@
         [:div {:class "mt-4 flex justify-center gap-2"}
          [:button {:type "submit"
                    :class "bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"} "Зберегти"]
-         [:button {:href "/table"
+         [:button {:type "button"
+                   :onclick "window.location.href='/table';"
                    :class "bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"} "Відмінити"]]])))))
 
 (defn valid-content-type? [content-type]
