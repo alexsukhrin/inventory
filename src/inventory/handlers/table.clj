@@ -29,29 +29,10 @@
   (and (string? s)
        (re-matches #"[A-Za-z0-9+/=]+" s)))
 
-(defn actions [request]
-  (let [role (get-role request)]
-    [:div {:class "max-w-7xl mx-auto"}
-     [:ul {:class "flex space-x-4"}
-      (when (is-admin role)
-        [:li
-         [:button {:hx-get "/add-row"
-                   :hx-target "#user-table-body"
-                   :hx-swap "afterbegin"
-                   :class "bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"}
-          "Add Record"]])
-      [:li
-       [:button {:class "bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                 :onclick "window.location.href='/download-csv'"}
-        "Download CSV"]]
-      [:li
-       [:button {:class "bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-                 :onclick "window.print()"}
-        "Print Report"]]]]))
-
 (defn table [request]
   (let [role (get-role request)]
-    [:div {:class "overflow-x-auto max-w-full"}
+    [:div {:class "overflow-x-auto max-w-full"
+           :id "user-table-body"}
      [:div {:class "max-h-screen overflow-y-auto border border-gray-300 rounded-lg"}
       [:table {:class "max-h-screen bg-white"}
        [:thead {:class "sticky top-0 bg-gray-200 shadow-md"}
@@ -78,7 +59,7 @@
            [:th {:class "px-4 py-2 border-b bg-gray-100 font-medium text-left"} "Редагувати"])
          (when (is-admin role)
            [:th {:class "px-4 py-2 border-b bg-gray-100 font-medium text-left"} "Видалити"])]]
-       [:tbody {:id "user-table-body"}
+       [:tbody
         (for [{:keys [id service accounting property_type name serial_number id_label actual_location status department
                       notes mvo nomenclature price accounting_name unit invoice last_changes photo_url]} (db/get-table)]
           [:tr {:id (str "row-" id)}
@@ -99,12 +80,15 @@
            [:td {:class "px-4 py-2 border-b text-gray-700"} unit]
            [:td {:class "px-4 py-2 border-b text-gray-700"} invoice]
            [:td {:class "px-4 py-2 border-b text-gray-700"} last_changes]
-           [:td {:class "px-4 py-2 border-b text-gray-700"} (when (base64-valid? photo_url) [:a {:href (str "data:image/png;base64," photo_url) :download "image.png"} [:img {:src (str "data:image/png;base64," photo_url) :alt "Фото"}]])]
+           [:td {:class "px-4 py-2 border-b text-gray-700"}
+            (when (base64-valid? photo_url)
+              [:a {:href (str "data:image/png;base64," photo_url) :download "image.png"}
+               [:img {:src (str "data:image/png;base64," photo_url) :alt "Фото"}]])]
            (when (or (is-admin role) (is-edit role))
              [:td {:class "px-4 py-2 border-b"}
               [:button {:hx-post "/edit-row"
                         :hx-vals (generate-string {:row-id id})
-                        :hx-target (str "#row-" id)
+                        :hx-target "#user-table-body"
                         :hx-swap "outerHTML"
                         :class "bg-yellow-500 text-white px-3 py-1 rounded"} "Edit"]])
            (when (is-admin role)
@@ -112,8 +96,7 @@
               [:button {:hx-delete (str "/delete-row/" id)
                         :hx-target (str "#row-" id)
                         :hx-swap "outerHTML"
-                        :class "bg-red-500 text-white px-3 py-1 rounded"} "Delete"]])])]]
-      [:div {:class "flex justify-center mt-4"}]]]))
+                        :class "bg-red-500 text-white px-3 py-1 rounded"} "Delete"]])])]]]]))
 
 (defn paginations []
   [:div {:class "flex justify-center mt-4"}
@@ -140,11 +123,10 @@
       [:nav
        [:ul {:class "flex space-x-4"}
         (when (is-admin role)
-          [:li [:a {:hx-get "/add-row"
-                    :hx-target "#user-table-body"
-                    :hx-swap "afterbegin"
-                    :href "/tables"
-                    :class "hover:text-gray-300"} "Add Record"]])
+          [:li [:button {:hx-get "/add-row"
+                         :hx-target "#user-table-body"
+                         :hx-swap "outerHTML"
+                         :class "hover:text-gray-300"} "Add Record"]])
         [:li [:button {:onclick "window.location.href='/download-csv'"
                        :class "hover:text-gray-300"} "Download CSV"]]
         [:li [:a {:href "/logout" :class "hover:text-gray-300"} "Logout"]]]]]]))
@@ -160,37 +142,50 @@
   (response/response
    (str
     (h/html
-     [:tr {:id "add-row"}
-      [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "service" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "accounting" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "property_type" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "name" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "serial_number" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "id_label" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "actual_location" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "status" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "department" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "notes" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "mvo" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "nomenclature" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "price" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "accounting_name" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "unit" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "text" :name "invoice" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "hidden" :name "last_changes" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} [:input {:type "file" :name "photo_url" :class "border rounded px-2 py-1"}]]
-       [:td {:class "px-4 py-2 border-b"} 
-        [:button {:hx-post "/save-row" 
-                  :enctype "multipart/form-data"
-                   :hx-include "closest tr"
-                   :hx-target "#add-row"
-                   :hx-swap "outerHTML"
-                  :class "bg-green-500 text-white px-3 py-1 rounded"} "Save"]]
-       [:td {:class "px-4 py-2 border-b"}
-        [:button {:hx-post "/delete-add-row-btn"
-                  :hx-swap "outerHTML"
-                  :hx-target "#add-row"
-                  :class "bg-red-500 text-white px-3 py-1 rounded"} "Delete"]]]))))
+     [:form {:method "post"
+             :enctype "multipart/form-data"
+             :action "/save-row"
+             :class "w-full"}
+      [:table {:class "table-auto w-full border-collapse border border-gray-200"}
+       [:thead
+        [:tr {:class "bg-gray-100"}
+         [:th {:class "px-4 py-2 border"} "Field"]
+         [:th {:class "px-4 py-2 border"} "Value"]]]
+       [:tbody
+        (for [[field name] [["Служба" "service"]
+                            ["Облік" "accounting"]
+                            ["Тип майна" "property_type"]
+                            ["Найменування" "name"]
+                            ["Серійний номер" "serial_number"]
+                            ["ID|Наліпка" "id_label"]
+                            ["Фактично знаходиться" "actual_location"]
+                            ["Статус" "status"]
+                            ["Підрозділ" "department"]
+                            ["Примітки та допис" "notes"]
+                            ["М.В.О." "mvo"]
+                            ["Номенклатура" "nomenclature"]
+                            ["Ціна" "price"]
+                            ["Найменування по обліку" "accounting_name"]
+                            ["Одиниця" "unit"]
+                            ["Накладна" "invoice"]]]
+          [:tr
+           [:td {:class "px-4 py-2 border bg-gray-50"} field]
+           [:td {:class "px-4 py-2 border"}
+            [:input {:type "text"
+                     :name name
+                     :class "border rounded px-2 py-1 w-full"}]]])
+        [:tr
+         [:td {:class "px-4 py-2 border bg-gray-50"} "Фото"]
+         [:td {:class "px-4 py-2 border"}
+          [:input {:type "file" :name "photo_url" :class "border rounded px-2 py-1 w-full"}]]]]]
+      [:div {:class "mt-4 flex justify-center gap-2"}
+       [:button {:type "submit"
+                 :class "bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"}
+        "Save"]
+       [:button {:type "submit"
+                 :href "/table"
+                 :class "bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"}
+        "Cancel"]]]))))
 
 (defn to-byte-array [input-stream]
   (with-open [baos (java.io.ByteArrayOutputStream.)]
@@ -198,75 +193,35 @@
     (.toByteArray baos)))
 
 (defn encode-to-base64 [file-path]
-  (try 
+  (try
     (let [file-bytes (io/input-stream file-path)]
-    (String. (b64/encode (to-byte-array file-bytes))))
+      (String. (b64/encode (to-byte-array file-bytes))))
     (catch Exception e (str "caught exception: " (.getMessage e)))))
 
 (defn save-row [request]
   (let [{:keys [service accounting property_type name serial_number id_label actual_location status department
-                notes mvo nomenclature price accounting_name unit invoice photo_url]} (:params request) 
+                notes mvo nomenclature price accounting_name unit invoice photo_url]} (:params request)
         temp-file (:tempfile photo_url)
-        base64-data (encode-to-base64 temp-file)
-        {:keys [id service accounting property_type name serial_number id_label actual_location status department
-                notes mvo nomenclature price accounting_name unit invoice last_changes photo_url]}
-        (db/add-record {:service service
-                        :accounting accounting
-                        :property_type property_type
-                        :name name
-                        :serial_number serial_number
-                        :id_label id_label
-                        :actual_location actual_location
-                        :status status
-                        :department department
-                        :notes notes
-                        :mvo mvo
-                        :nomenclature nomenclature
-                        :price price
-                        :accounting_name accounting_name
-                        :unit unit
-                        :invoice invoice
-                        :last_changes (jt/local-date-time)
-                        :photo_url base64-data})]
-    {:status 200
-     :headers {"Content-Type" "text/html"}
-     :body (str
-            (h/html
-             [:tr {:id (str "row-" id)}
-              [:td {:class "px-4 py-2 border-b text-gray-700"} service]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} accounting]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} property_type]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} name]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} serial_number]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} id_label]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} actual_location]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} status]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} department]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} notes]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} mvo]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} nomenclature]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} price]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} accounting_name]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} unit]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} invoice]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} last_changes]
-              [:td {:class "px-4 py-2 border-b text-gray-700"}
-               (when (base64-valid? photo_url)
-                 [:a {:href (str "data:image/png;base64," photo_url)
-                      :download "image.png"}
-                  [:img {:src (str "data:image/png;base64," photo_url)
-                         :alt "Фото"}]])]
-              [:td {:class "px-4 py-2 border-b"}
-               [:button {:hx-post "/edit-row"
-                         :hx-vals (generate-string {:row-id id})
-                         :hx-target (str "#row-" id)
-                         :hx-swap "outerHTML"
-                         :class "bg-yellow-500 text-white px-3 py-1 rounded"} "Edit"]]
-              [:td {:class "px-4 py-2 border-b"}
-               [:button {:hx-delete (str "/delete-row/" id)
-                         :hx-target (str "#row-" id)
-                         :hx-swap "outerHTML"
-                         :class "bg-red-500 text-white px-3 py-1 rounded"} "Delete"]]]))}))
+        base64-data (encode-to-base64 temp-file)]
+    (db/add-record {:service service
+                    :accounting accounting
+                    :property_type property_type
+                    :name name
+                    :serial_number serial_number
+                    :id_label id_label
+                    :actual_location actual_location
+                    :status status
+                    :department department
+                    :notes notes
+                    :mvo mvo
+                    :nomenclature nomenclature
+                    :price price
+                    :accounting_name accounting_name
+                    :unit unit
+                    :invoice invoice
+                    :last_changes (jt/local-date-time)
+                    :photo_url base64-data})
+    (response/redirect "/table")))
 
 (defn delete-add-row-btn [request]
   {:status 200
@@ -282,114 +237,96 @@
 (defn edit-row [request]
   (let [role (get-role request)
         {:keys [id service accounting property_type name serial_number id_label actual_location status department
-                notes mvo nomenclature price accounting_name unit invoice last_changes photo_url]}
-        (db/get-record {:row-id (-> request :params :row-id Integer/parseInt)})]
-    {:status 200
-     :headers {"Content-Type" "text/html"}
-     :body (str
-            (h/html
-             [:tr {:id (str "row-" id)}
-              [:td {:class "px-4 py-2 border-b"} [:input {:value service :type "text" :name "service" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value accounting :type "text" :name "accounting" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value property_type :type "text" :name "property_type" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value name :type "text" :name "name" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value serial_number :type "text" :name "serial_number" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value id_label :type "text" :name "id_label" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value actual_location :type "text" :name "actual_location" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value status :type "text" :name "status" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value department :type "text" :name "department" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value notes :type "text" :name "notes" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value mvo :type "text" :name "mvo" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value nomenclature :type "text" :name "nomenclature" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value price :type "text" :name "price" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value accounting_name :type "text" :name "accounting_name" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value unit :type "text" :name "unit" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value invoice :type "text" :name "invoice" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value last_changes :type "hidden" :name "last_changes" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"} [:input {:value photo_url :type "file" :name "photo_url" :class "border rounded px-2 py-1"}]]
-               [:td {:class "px-4 py-2 border-b"}
-                [:button {:hx-post "/save-edit-row"
-                          :enctype "multipart/form-data"
-                          :hx-include "closest tr"
-                          :hx-target (str "#row-" id)
-                          :hx-swap "outerHTML"
-                          :hx-vals (generate-string {:row-id id})
-                          :class "bg-green-500 text-white px-3 py-1 rounded"} "Save"]]
-               (when (is-admin role)
-                 [:td {:class "px-4 py-2 border-b"}
-                  [:button {:hx-delete (str "/delete-row/" id)
-                            :hx-swap "outerHTML"
-                            :hx-target (str "#row-" id)
-                            :class "bg-red-500 text-white px-3 py-1 rounded"} "Delete"]])]))}))
+                notes mvo nomenclature price accounting_name unit invoice last_changes photo_url]} (db/get-record {:row-id (-> request :params :row-id Integer/parseInt)})]
+    (response/response
+     (str
+      (h/html
+       [:form {:method "post"
+               :enctype "multipart/form-data"
+               :action "/save-edit-row"
+               :class "w-full"}
+        [:table {:class "table-auto w-full border-collapse border border-gray-200"}
+         [:thead
+          [:tr {:class "bg-gray-100"}
+           [:th {:class "px-4 py-2 border"} "Field"]
+           [:th {:class "px-4 py-2 border"} "Value"]]]
+         [:tbody
+          [:tr
+           [:td {:class "px-4 py-2 border"}
+            [:input {:type "hidden"
+                     :name "id"
+                     :value id
+                     :class "border rounded px-2 py-1 w-full"}]]]
+          (for [[field name value] [["Служба" "service" service]
+                                    ["Облік" "accounting" accounting]
+                                    ["Тип майна" "property_type" property_type]
+                                    ["Найменування" "name" name]
+                                    ["Серійний номер" "serial_number" serial_number]
+                                    ["ID|Наліпка" "id_label" id_label]
+                                    ["Фактично знаходиться" "actual_location" actual_location]
+                                    ["Статус" "status" status]
+                                    ["Підрозділ" "department" department]
+                                    ["Примітки та допис" "notes" notes]
+                                    ["М.В.О." "mvo" mvo]
+                                    ["Номенклатура" "nomenclature" nomenclature]
+                                    ["Ціна" "price" price]
+                                    ["Найменування по обліку" "accounting_name" accounting_name]
+                                    ["Одиниця" "unit" unit]
+                                    ["Накладна" "invoice" invoice]]]
+            [:tr
+             [:td {:class "px-4 py-2 border bg-gray-50"} field]
+             [:td {:class "px-4 py-2 border"}
+              [:input {:type "text"
+                       :name name
+                       :value value
+                       :class "border rounded px-2 py-1 w-full"}]]])
+          [:tr
+           [:td {:class "px-4 py-2 border bg-gray-50"} "Фото"]
+           [:td {:class "px-4 py-2 border"}
+            (when (base64-valid? photo_url)
+              [:div
+               [:p "Поточне зображення:"]
+               [:img {:src (str "data:image/png;base64," photo_url)
+                      :alt "Зображення"
+                      :class "max-w-xs max-h-32 mb-2"}]])
+            [:input {:type "file"
+                     :name "photo_url"
+                     :value photo_url
+                     :class "border rounded px-2 py-1 w-full"}]
+            [:input {:type "hidden" :name "existing_photo_url" :value photo_url}]]]]]
+        [:div {:class "mt-4 flex justify-center gap-2"}
+         [:button {:type "submit"
+                   :class "bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"} "Save"]
+         [:button {:href "/table"
+                   :class "bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"} "Cancel"]]])))))
 
 (defn save-edit-row [request]
   (let [role (get-role request)
-        {:keys [row-id service accounting property_type name serial_number id_label actual_location status department
-                notes mvo nomenclature price accounting_name unit invoice photo_url]} (:params request)
-        temp-file (:tempfile photo_url)
-        base64-data (encode-to-base64 temp-file)
         {:keys [id service accounting property_type name serial_number id_label actual_location status department
-                notes mvo nomenclature price accounting_name unit invoice last_changes photo_url]}
-        (db/update-record {:row-id (Integer/parseInt row-id)
-                           :service service
-                           :accounting accounting
-                           :property_type property_type
-                           :name name
-                           :serial_number serial_number
-                           :id_label id_label
-                           :actual_location actual_location
-                           :status status
-                           :department department
-                           :notes notes
-                           :mvo mvo
-                           :nomenclature nomenclature
-                           :price price
-                           :accounting_name accounting_name
-                           :unit unit
-                           :invoice invoice
-                           :last_changes (jt/local-date-time)
-                           :photo_url base64-data})]
-    {:status 200
-     :headers {"Content-Type" "text/html"}
-     :body (str
-            (h/html
-             [:tr {:id (str "row-" row-id)}
-              [:td {:class "px-4 py-2 border-b text-gray-700"} service]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} accounting]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} property_type]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} name]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} serial_number]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} id_label]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} actual_location]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} status]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} department]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} notes]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} mvo]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} nomenclature]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} price]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} accounting_name]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} unit]
-              [:td {:class "px-4 py-2 border-b text-gray-700"} invoice]
-              [:td {:class "px-4 py-2 border-b text-gray-700"}
-               [:time {:datetime "2025-01-05"} last_changes]]
-              [:td {:class "px-4 py-2 border-b text-gray-700"}
-               (when (base64-valid? photo_url)
-                 [:a {:href (str "data:image/png;base64," photo_url)
-                      :download "image.png"}
-                  [:img {:src (str "data:image/png;base64," photo_url)
-                         :alt "Фото"}]])]
-              [:td {:class "px-4 py-2 border-b"}
-               [:button {:hx-post "/edit-row"
-                         :hx-vals (generate-string {:row-id id})
-                         :hx-target (str "#row-" id)
-                         :hx-swap "outerHTML"
-                         :class "bg-yellow-500 text-white px-3 py-1 rounded"} "Edit"]]
-              (when (is-admin role)
-                [:td {:class "px-4 py-2 border-b"}
-                 [:button {:hx-delete (str "/delete-row/" id)
-                           :hx-target (str "#row-" id)
-                           :hx-swap "outerHTML"
-                           :class "bg-red-500 text-white px-3 py-1 rounded"} "Delete"]])]))}))
+                notes mvo nomenclature price accounting_name unit invoice photo_url existing_photo_url]} (:params request)
+        new-file (:tempfile photo_url)
+        new-file-64 (encode-to-base64 new-file)
+        photo (if (base64-valid? new-file-64) new-file-64 existing_photo_url)]
+    (db/update-record {:row-id (Integer/parseInt id)
+                       :service service
+                       :accounting accounting
+                       :property_type property_type
+                       :name name
+                       :serial_number serial_number
+                       :id_label id_label
+                       :actual_location actual_location
+                       :status status
+                       :department department
+                       :notes notes
+                       :mvo mvo
+                       :nomenclature nomenclature
+                       :price price
+                       :accounting_name accounting_name
+                       :unit unit
+                       :invoice invoice
+                       :last_changes (jt/local-date-time)
+                       :photo_url photo})
+    (response/redirect "/table")))
 
 (defn generate-csv [data]
   (let [headers (map name (keys (first data)))] ; Заголовки колонок
