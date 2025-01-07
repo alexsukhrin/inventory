@@ -126,10 +126,12 @@
           [:li [:button {:hx-get "/add-row"
                          :hx-target "#user-table-body"
                          :hx-swap "outerHTML"
-                         :class "hover:text-gray-300"} "Add Record"]])
+                         :class "hover:text-gray-300"} "Додати"]])
         [:li [:button {:onclick "window.location.href='/download-csv'"
-                       :class "hover:text-gray-300"} "Download CSV"]]
-        [:li [:a {:href "/logout" :class "hover:text-gray-300"} "Logout"]]]]]]))
+                       :class "hover:text-gray-300"} "Завантажити"]]
+        [:li [:button {:onclick "window.print()"
+                       :class "hover:text-gray-300"} "Друк"]]
+        [:li [:a {:href "/logout" :class "hover:text-gray-300"} "Вийти"]]]]]]))
 
 (defn table-page [request]
   (response/response
