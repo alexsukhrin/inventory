@@ -331,6 +331,8 @@
            [:td {:class "px-4 py-2 border bg-gray-50"} "Фото"]
            [:td {:class "px-4 py-2 border"}
             [:div {:id "photo-container"}
+             [:input {:type "hidden" :name "existing_photo_url" :value photo_url}]
+             [:input {:type "hidden" :name "existing_photo_type" :value photo_type}]
              (when (base64-valid? photo_url)
                [:div
                 [:p "Поточне зображення:"]
@@ -360,10 +362,7 @@
                      :name "photo_url"
                      :accept ".png,.jpeg,.jpg,.pdf"
                      :value photo_url
-                     :class "border rounded px-2 py-1 w-full"}]
-
-            [:input {:type "hidden" :name "existing_photo_url" :value photo_url}]
-            [:input {:type "hidden" :name "existing_photo_type" :value photo_type}]]]]]
+                     :class "border rounded px-2 py-1 w-full"}]]]]]
         [:div {:class "mt-4 flex justify-center gap-2"}
          [:button {:type "submit"
                    :class "bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"} "Зберегти"]
