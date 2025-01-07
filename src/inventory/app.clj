@@ -32,6 +32,7 @@
        (POST     "/save-edit-row"      request  (table-handler/save-edit-row request))
        (POST     "/delete-add-row-btn" request  (table-handler/delete-add-row-btn request))
        (POST     "/edit-row"           request  (table-handler/edit-row request))
+       (DELETE   "/delete-photo/:id"   [id]     (table-handler/delete-photo id))
        (DELETE   "/delete-row/:row-id" [row-id] (table-handler/delete-row row-id))
        (GET      "/logout"             request  (login-handler/logout-handler request))
        (GET      "/table"              request  (table-handler/table-page request))

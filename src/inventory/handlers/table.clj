@@ -61,7 +61,7 @@
            [:th {:class "px-4 py-2 border-b bg-gray-100 font-medium text-left"} "Видалити"])]]
        [:tbody
         (for [{:keys [id service accounting property_type name serial_number id_label actual_location status department
-                      notes mvo nomenclature price accounting_name unit invoice last_changes photo_url]} (db/get-table)]
+                      notes mvo nomenclature price accounting_name unit invoice last_changes photo_url photo_type]} (db/get-table)]
           [:tr {:id (str "row-" id)}
            [:td {:class "px-4 py-2 border-b text-gray-700"} service]
            [:td {:class "px-4 py-2 border-b text-gray-700"} accounting]
@@ -82,8 +82,21 @@
            [:td {:class "px-4 py-2 border-b text-gray-700"} last_changes]
            [:td {:class "px-4 py-2 border-b text-gray-700"}
             (when (base64-valid? photo_url)
-              [:a {:href (str "data:image/png;base64," photo_url) :download "image.png"}
-               [:img {:src (str "data:image/png;base64," photo_url) :alt "Фото"}]])]
+              (cond
+                (= photo_type "image/png")
+                [:a {:href (str "data:image/png;base64," photo_url) :download "image.png"}
+                 [:img {:src (str "data:image/png;base64," photo_url) :alt "Фото" :class "max-w-xs"}]]
+
+                (= photo_type "image/jpeg")
+                [:a {:href (str "data:image/jpeg;base64," photo_url) :download "image.jpg"}
+                 [:img {:src (str "data:image/jpeg;base64," photo_url) :alt "Фото" :class "max-w-xs"}]]
+
+                (= photo_type "application/pdf")
+                [:a {:href (str "data:application/pdf;base64," photo_url) :download "document.pdf"}
+                 [:span {:class "text-blue-500"} "Download PDF"]]
+
+                :else
+                [:span "Unsupported file type"]))]
            (when (or (is-admin role) (is-edit role))
              [:td {:class "px-4 py-2 border-b"}
               [:button {:hx-post "/edit-row"
@@ -106,14 +119,14 @@
                         :hx-target (str "#row-" id)
                         :hx-swap "outerHTML"
                         :class "bg-red-500 text-white px-3 py-1 rounded"}
-               [:svg {:xmlns "http://www.w3.org/2000/svg" 
-                      :fill "none" 
-                      :viewBox "0 0 24 24" 
-                      :stroke-width "1.5" 
-                      :stroke "currentColor" 
+               [:svg {:xmlns "http://www.w3.org/2000/svg"
+                      :fill "none"
+                      :viewBox "0 0 24 24"
+                      :stroke-width "1.5"
+                      :stroke "currentColor"
                       :class "size-6"}
-                [:path {:stroke-linecap "round" 
-                        :stroke-linejoin "round" 
+                [:path {:stroke-linecap "round"
+                        :stroke-linejoin "round"
                         :d "m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"}]]]])])]]]]))
 
 (defn paginations []
@@ -197,7 +210,10 @@
         [:tr
          [:td {:class "px-4 py-2 border bg-gray-50"} "Фото"]
          [:td {:class "px-4 py-2 border"}
-          [:input {:type "file" :name "photo_url" :class "border rounded px-2 py-1 w-full"}]]]]]
+          [:input {:type "file"
+                   :name "photo_url"
+                   :accept ".png,.jpeg,.jpg,.pdf"
+                   :class "border rounded px-2 py-1 w-full"}]]]]]
       [:div {:class "mt-4 flex justify-center gap-2"}
        [:button {:type "submit"
                  :class "bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"}
@@ -221,8 +237,8 @@
 (defn save-row [request]
   (let [{:keys [service accounting property_type name serial_number id_label actual_location status department
                 notes mvo nomenclature price accounting_name unit invoice photo_url]} (:params request)
-        temp-file (:tempfile photo_url)
-        base64-data (encode-to-base64 temp-file)]
+        {:keys [content-type tempfile]} photo_url
+        base64-data (encode-to-base64 tempfile)]
     (db/add-record {:service service
                     :accounting accounting
                     :property_type property_type
@@ -240,7 +256,8 @@
                     :unit unit
                     :invoice invoice
                     :last_changes (jt/local-date-time)
-                    :photo_url base64-data})
+                    :photo_url base64-data
+                    :photo_type content-type})
     (response/redirect "/table")))
 
 (defn delete-add-row-btn [request]
@@ -254,10 +271,20 @@
    :headers {"Content-Type" "text/html"}
    :body nil})
 
+(defn delete-photo [id]
+  (db/update-photo {:id (Integer/parseInt id)
+                    :photo_url nil
+                    :photo_type nil
+                    :last_changes (jt/local-date-time)})
+  {:status 200
+   :headers {"Content-Type" "text/html"}
+   :body nil})
+
 (defn edit-row [request]
   (let [role (get-role request)
         {:keys [id service accounting property_type name serial_number id_label actual_location status department
-                notes mvo nomenclature price accounting_name unit invoice last_changes photo_url]} (db/get-record {:row-id (-> request :params :row-id Integer/parseInt)})]
+                notes mvo nomenclature price accounting_name unit invoice last_changes photo_url photo_type]}
+        (db/get-record {:row-id (-> request :params :row-id Integer/parseInt)})]
     (response/response
      (str
       (h/html
@@ -303,30 +330,56 @@
           [:tr
            [:td {:class "px-4 py-2 border bg-gray-50"} "Фото"]
            [:td {:class "px-4 py-2 border"}
-            (when (base64-valid? photo_url)
-              [:div
-               [:p "Поточне зображення:"]
-               [:img {:src (str "data:image/png;base64," photo_url)
-                      :alt "Зображення"
-                      :class "max-w-xs max-h-32 mb-2"}]])
+            [:div {:id "photo-container"}
+             (when (base64-valid? photo_url)
+               [:div
+                [:p "Поточне зображення:"]
+                (cond
+                  (= photo_type "image/png")
+                  [:a {:href (str "data:image/png;base64," photo_url) :download "image.png"}
+                   [:img {:src (str "data:image/png;base64," photo_url) :alt "Зображення" :class "max-w-xs"}]]
+
+                  (= photo_type "image/jpeg")
+                  [:a {:href (str "data:image/jpeg;base64," photo_url) :download "image.jpg"}
+                   [:img {:src (str "data:image/jpeg;base64," photo_url) :alt "Зображення" :class "max-w-xs"}]]
+
+                  (= photo_type "application/pdf")
+                  [:a {:href (str "data:application/pdf;base64," photo_url) :download "document.pdf"}
+                   [:span {:class "text-blue-500"} "Завантажити PDF"]]
+
+                  :else
+                  [:span "Unsupported file type"])
+                [:button {:type "button"
+                          :hx-delete (str "/delete-photo/" id)
+                          :hx-target "#photo-container"
+                          :hx-swap "outerHTML"
+                          :class "bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"}
+                 "Видалити зображення"]])]
+
             [:input {:type "file"
                      :name "photo_url"
+                     :accept ".png,.jpeg,.jpg,.pdf"
                      :value photo_url
                      :class "border rounded px-2 py-1 w-full"}]
-            [:input {:type "hidden" :name "existing_photo_url" :value photo_url}]]]]]
+
+            [:input {:type "hidden" :name "existing_photo_url" :value photo_url}]
+            [:input {:type "hidden" :name "existing_photo_type" :value photo_type}]]]]]
         [:div {:class "mt-4 flex justify-center gap-2"}
          [:button {:type "submit"
                    :class "bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"} "Зберегти"]
          [:button {:href "/table"
                    :class "bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"} "Відмінити"]]])))))
 
+(defn valid-content-type? [content-type]
+  (some #(= content-type %) ["application/pdf" "image/png" "image/jpeg"]))
+
 (defn save-edit-row [request]
   (let [role (get-role request)
         {:keys [id service accounting property_type name serial_number id_label actual_location status department
-                notes mvo nomenclature price accounting_name unit invoice photo_url existing_photo_url]} (:params request)
-        new-file (:tempfile photo_url)
-        new-file-64 (encode-to-base64 new-file)
-        photo (if (base64-valid? new-file-64) new-file-64 existing_photo_url)]
+                notes mvo nomenclature price accounting_name unit invoice photo_url existing_photo_url existing_photo_type]} (:params request)
+        {:keys [content-type tempfile]} photo_url
+        new-file (encode-to-base64 tempfile)
+        photo (if (base64-valid? new-file) new-file existing_photo_url)]
     (db/update-record {:row-id (Integer/parseInt id)
                        :service service
                        :accounting accounting
@@ -345,7 +398,8 @@
                        :unit unit
                        :invoice invoice
                        :last_changes (jt/local-date-time)
-                       :photo_url photo})
+                       :photo_url photo
+                       :photo_type (if (valid-content-type? content-type) content-type existing_photo_type)})
     (response/redirect "/table")))
 
 (defn generate-csv [data]
